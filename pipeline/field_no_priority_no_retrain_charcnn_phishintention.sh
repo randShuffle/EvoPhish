@@ -1,0 +1,1 @@
+python ./model_consumer.py --exp_name field_no_priority_no_retrain_charcnn_phishintention
