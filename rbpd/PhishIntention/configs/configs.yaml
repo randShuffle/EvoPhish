@@ -16,7 +16,7 @@ CRP_LOCATOR: # element recognition model -- logo only
   DETECT_THRE: 0.05
 
 SIAMESE_MODEL:
-  NUM_CLASSES: 2531
+  NUM_CLASSES: 5569
   MATCH_THRE: 0.84
   WEIGHTS_PATH: models/bit.pth.tar
   TARGETLIST_PATH: ../../datasets/phishpedia/logos
