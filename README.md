@@ -3,7 +3,6 @@
 ## 📂 Structure
 
 This repository contains three components:
-
 1. The EvoPhish **core** module (`/pipeline`).
 2. The **rbpd** module (`/rbpd`), which implements PhishIntention.
 
@@ -47,60 +46,57 @@ This repository contains three components:
 
 
 ## ⚙️ Setup
-
 Clone the repository and follow the steps below:
 
 1. Create a conda environment for evophish.
-
-   ```bash
-   conda env create -f environment.yml
-   conda activate evophish
-   pip install .
-   ```
-
+    ```bash
+    conda env create -f environment.yml
+    conda activate evophish
+    pip install .
+    ```
+    
 2. Download checkpoints for typo model.
-
-   ```bash
-   mkdir -p models
-   cd models
-   mkdir -p trained
-   cd trained
-   gdown --id "14BDz2yQLdIFVdeHfLbkcg5o1yOVvfISt" -O "typo_model_10m_canine_no_subdomains.zip"
-   unzip typo_model_10m_canine_no_subdomains.zip
-   ```
-
-3. Create a conda environment for phishintention.
-
-   ```bash
-   cd rbpd/PhishIntention
-   export KMP_DUPLICATE_LIB_OK=TRUE
+    ```bash
+    mkdir -p models
+    cd models
+    mkdir -p trained
+    cd trained
+    gdown --id "14BDz2yQLdIFVdeHfLbkcg5o1yOVvfISt" -O "typo_model_10m_canine_no_subdomains.zip"
+    unzip typo_model_10m_canine_no_subdomains.zip
+    ```
+    
+2. Create a conda environment for phishintention.
    
-   # Install pixi (restart your terminal after installation)
-   curl -fsSL https://pixi.sh/install.sh | sh
+    ```bash
+    cd rbpd/PhishIntention
+    export KMP_DUPLICATE_LIB_OK=TRUE
+    
+    # Install pixi (restart your terminal after installation)
+    curl -fsSL https://pixi.sh/install.sh | sh
+    
+    # Install Chrome (Ubuntu/Debian)
+    wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+    sudo dpkg -i google-chrome-stable_current_amd64.deb
+    sudo apt-get install -f
+    
+    # Install dependencies (auto-detects GPU and installs appropriate PyTorch/Detectron2)
+    pixi install
+    ```
+    
+2. Start RBPD service(PhishIntention).
    
-   # Install Chrome (Ubuntu/Debian)
-   wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-   sudo dpkg -i google-chrome-stable_current_amd64.deb
-   sudo apt-get install -f
-   
-   # Install dependencies (auto-detects GPU and installs appropriate PyTorch/Detectron2)
-   pixi install
-   ```
-
-4. Start RBPD service(PhishIntention).
-
-   ```bash
-   pixi shell
-   python app.py
-   ```
-
-5. Start Certstream
+    ```bash
+    pixi shell
+    python app.py
+    ```
+    
+3. Start Certstream
 
    ```bash
    docker run -d --name certstream -p 8080:8080 0rickyy0/certstream-server-go
    ```
 
-6. Start Kafka
+4. Start Kafka
 
    ```bash
    docker run -d \
@@ -125,7 +121,7 @@ Clone the repository and follow the steps below:
      confluentinc/cp-kafka:7.5.0
    ```
 
-7. Start MongoDB
+5. Start MongoDB
 
    ```
    docker run -dit --name mongo_certstream \
@@ -139,7 +135,7 @@ Clone the repository and follow the steps below:
    mongo
    ```
 
-8. Start Redis
+6. Start Redis
 
    ```bash
    docker run -d --name certstream_redis -p 6380:6379 redis
@@ -149,7 +145,7 @@ Clone the repository and follow the steps below:
    docker run -d --name certstream_deduplicate_redis -p 6381:6379 redis
    ```
 
-9. Start the whole pipeline
+7. Start the whole pipeline
 
    ```bash
    # Start collecting data from Certstream.
@@ -177,6 +173,7 @@ Clone the repository and follow the steps below:
    ./field_no_priority_charcnn_phishintention.sh
    ./field_no_priority_no_retrain_charcnn_phishintention.sh
    ```
+   
 
 
 
