@@ -61,10 +61,10 @@ Clone the repository and follow the steps below:
     cd models
     mkdir -p trained
     cd trained
-    gdown --id "14BDz2yQLdIFVdeHfLbkcg5o1yOVvfISt" -O "typo_model_10m_canine_no_subdomains.zip"
-    unzip typo_model_10m_canine_no_subdomains.zip
+    gdown --id "1tGrYo7169IQ8TZUvEtk5eZ4o9pp2PMmO" -O "typo_model.zip"
+    unzip typo_model.zip
     ```
-    
+
 2. Create a conda environment for phishintention.
    
     ```bash
