@@ -1,3 +1,4 @@
+
 from PIL import Image, ImageOps
 from torchvision import transforms
 from utils.phishpedia_utils import brand_converter, resolution_alignment, l2_norm
@@ -279,11 +280,27 @@ whitelist_domains = [
 ]
 
 
+def check_domain_consistent(url,matched_domain):
+    suffix_part = '.'+ tldextract.extract(url).suffix
+    domain_part = tldextract.extract(url).domain
+    extracted_domain = domain_part + suffix_part
+    matched_domain_parts = [tldextract.extract(x).domain for x in matched_domain]
+    matched_suffix_parts = [tldextract.extract(x).suffix for x in matched_domain]
+    
+    # If the webpage domain exactly aligns with the target website's domain => Benign
+    if extracted_domain in matched_domain or extracted_domain in whitelist_domains or extracted_domain.endswith("gov.cn"):
+        return True
+        
+    for matched_domain_part,matched_suffix_part in zip(matched_domain_parts,matched_suffix_parts):
+        if domain_part == matched_domain_part:
+            if "." + suffix_part.split('.')[-1] in COUNTRY_TLDs or "."+matched_suffix_part.split('.')[-1] in COUNTRY_TLDs:
+                return True
+            
+    return False
 
-# 0：no logos detected
-# 1：match but benign(logo domain consistent)
-# 2：match and phish(logo domain inconsistent)
-# 3：logos detected but no match
+
+
+
 
 def check_domain_brand_inconsistency(logo_boxes,
                                      domain_map,
@@ -293,13 +310,12 @@ def check_domain_brand_inconsistency(logo_boxes,
                                      topk: float = 1):
    
     
-    # print('number of logo boxes:', len(logo_boxes))
-    suffix_part = '.'+ tldextract.extract(url).suffix
-    domain_part = tldextract.extract(url).domain
-    extracted_domain = domain_part + suffix_part
     matched_target, matched_domain, matched_coord, this_conf = None, None, None, None
+    top3_brandlist = []
+    top3_sim_path = []
+    top3_domainlist = []
+    cropped = None
     phish_category = 3
-
     if len(logo_boxes) > 0:
         # siamese prediction for logo box
         for i, coord in enumerate(logo_boxes):
@@ -309,7 +325,7 @@ def check_domain_brand_inconsistency(logo_boxes,
 
             min_x, min_y, max_x, max_y = coord
             bbox = [float(min_x), float(min_y), float(max_x), float(max_y)]
-            matched_target, matched_domain, this_conf, sim_file_name = pred_brand(model, domain_map,
+            matched_target, matched_domain, this_conf, sim_file_name,top3_brandlist,top3_sim_path,top3_domainlist,cropped = pred_brand(model, domain_map,
                                                                    logo_feat_list, file_name_list,
                                                                    shot_path, bbox,
                                                                    similarity_threshold=similarity_threshold,
@@ -321,24 +337,10 @@ def check_domain_brand_inconsistency(logo_boxes,
             matched_coord = coord
             if this_conf>similarity_threshold:
                 phish_category = 2
-                matched_domain_parts = [tldextract.extract(x).domain for x in matched_domain]
-                matched_suffix_parts = [tldextract.extract(x).suffix for x in matched_domain]
-                
-                # If the webpage domain exactly aligns with the target website's domain => Benign
-                if extracted_domain in matched_domain or extracted_domain in whitelist_domains or extracted_domain.endswith("gov.cn"):
+                if check_domain_consistent(url, matched_domain):
                     phish_category = 1
-                    # matched_target, matched_domain = None, None  # Clear if domains are consistent
-                    
-                for matched_domain_part,matched_suffix_part in zip(matched_domain_parts,matched_suffix_parts):
-                    if domain_part == matched_domain_part:
-                        if "." + suffix_part.split('.')[-1] in COUNTRY_TLDs or "."+matched_suffix_part.split('.')[-1] in COUNTRY_TLDs:
-                            phish_category = 1
-                            break
-                        
-                
-              
 
-    return phish_category,brand_converter(matched_target), matched_domain, matched_coord, this_conf,sim_file_name
+    return phish_category,brand_converter(matched_target), matched_domain, matched_coord, this_conf,sim_file_name,top3_brandlist,top3_sim_path,top3_domainlist,cropped
 
 
 # def load_model_weights(num_classes: int, weights_path: str):
@@ -477,6 +479,9 @@ def pred_brand(model, domain_map, logo_feat_list, file_name_list, shot_path: str
 
     # get predicted box --> crop from screenshot
     cropped = img.crop((gt_bbox[0], gt_bbox[1], gt_bbox[2], gt_bbox[3]))
+
+    
+    
     img_feat = get_embedding(cropped, model, grayscale=grayscale)
 
     # get cosine similarity with every protected logo
@@ -491,6 +496,7 @@ def pred_brand(model, domain_map, logo_feat_list, file_name_list, shot_path: str
     sim_list = np.array(sim_list)[idx]
 
     # top1,2,3 candidate logos
+    top3_sim_path = pred_brand_list
     top3_brandlist = [brand_converter(os.path.basename(os.path.dirname(x))) for x in pred_brand_list]
     top3_domainlist = [domain_map[x] for x in top3_brandlist]
     top3_simlist = sim_list
@@ -532,6 +538,6 @@ def pred_brand(model, domain_map, logo_feat_list, file_name_list, shot_path: str
                 # aspect ratios of matched pair must not deviate by more than factor of 2.5
                 if max(ratio_crop, ratio_logo) / min(ratio_crop, ratio_logo) > 2.5:
                     continue  # did not pass aspect ratio check, try other
-            return predicted_brand, predicted_domain, final_sim,sim_file_name
+            return predicted_brand, predicted_domain, final_sim,sim_file_name,top3_brandlist,top3_sim_path,top3_domainlist,cropped
 
-    return top3_brandlist[0], top3_domainlist[0], top3_simlist[0],pred_brand_list[0]
+    return top3_brandlist[0], top3_domainlist[0], top3_simlist[0],pred_brand_list[0],top3_brandlist,top3_sim_path,top3_domainlist,cropped

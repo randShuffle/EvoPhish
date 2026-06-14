@@ -1,3 +1,5 @@
+import multiprocessing as mp
+mp.set_start_method("spawn", force=True)
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import base64
@@ -22,6 +24,7 @@ from Crypto.Cipher import AES
 import base64
 import redis
 from dotenv import load_dotenv
+import torch
 load_dotenv()
 BLACKLIST_URL = f"http://127.0.0.1:{os.getenv('SERVICE_PORT')}/blacklist"
 
@@ -61,7 +64,7 @@ def get_ip(url):
 def get_ip_and_geolocation(ori_url):
     try:
         ip = get_ip(ori_url)
-        access_token = 'xxxxx'
+        access_token = '25784b04b26581'
         url = f"https://ipinfo.io/{ip}/json?token={access_token}"
         response = requests.get(url)
         data = response.json()
@@ -83,34 +86,28 @@ password = "yourpassword"
 MONGO_URI = f'mongodb://{username}:{password}@localhost:27019/'
 DB_NAME = 'certstream'
 
-EXP_NAMES = ["baseline_phishintention",
-             "baseline_phishpedia",
-             "ablation_fasttext_phishintention","ablation_charcnn_phishintention","ablation_tfidf_phishintention",
-             "baseline_phishintel","field_charcnn_phishintention","field_no_priority_charcnn_phishintention",
-             "field_no_priority_no_retrain_charcnn_phishintention","field_no_priority_no_retrain_no_negative_charcnn_phishintention",]
+EXP_NAMES = ["ablation_charcnn_phishintention_vlm"
+             ]
 
 
 
 
 with app.app_context():
     phishpedia_cls = PhishIntentionWrapper()
-    
 
     try:
         mongo_client = MongoClient(MONGO_URI)
-
         mongo_client.admin.command('ping')
         db = mongo_client[DB_NAME]
         results_collection_dict = {}
         for exp_name in EXP_NAMES:
             results_collection_dict[exp_name] = db[exp_name]
             
-       
+      
     except ConnectionFailure as e:
-
+        
         mongo_client = None
     except Exception as e:
- 
         mongo_client = None
         
 
@@ -119,13 +116,13 @@ with app.app_context():
 def save_result_to_mongodb(result_data,exp_name):
 
     if mongo_client is None:
-
+        
         return False
     try:
         result = results_collection_dict[exp_name].insert_one(result_data)
         return result.acknowledged
     except OperationFailure as e:
- 
+
         return False
     except Exception as e:
 
@@ -149,12 +146,13 @@ def analyze():
         is_typo = data.get("is_typo")
         domain_classifier_result = data.get("domain_classifier")
         domain_classifier_prob = data.get("domain_classifier_prob")
-        ood_score = data.get("ood_score")
         is_ood = data.get("is_ood")
         
-        
+        if "phishintention_vlm" in exp_name:
+            phish_category,pred_target, matched_domain,siamese_conf,sim_file_name,orivis,plotvis= phishpedia_cls.test_orig_phishintention_vlm(url,screenshot_path)
+        else:
+            phish_category,pred_target, matched_domain,siamese_conf,sim_file_name,orivis,plotvis= phishpedia_cls.test_orig_phishintention(url,screenshot_path)
 
-        phish_category,pred_target, matched_domain,siamese_conf,sim_file_name,plotvis= phishpedia_cls.test_orig_phishintention(url,screenshot_path)
 
         result = {
             "ori_domain":ori_domain,
@@ -168,19 +166,21 @@ def analyze():
             "domain_classifier":domain_classifier_result,
             "domain_classifier_prob":domain_classifier_prob,
             "is_ood":is_ood,
-            "ood_score":ood_score
         }
 
         if phish_category==2:
-            
-            save_dir = os.path.join("../../phish_pictures", exp_name)
-            os.makedirs(save_dir, exist_ok=True) 
       
+            save_dir = os.path.join("../../phish_pictures", exp_name)
+            os.makedirs(save_dir, exist_ok=True)
+    
             save_path = os.path.join(save_dir, f"{encrypt_filename(ori_domain)}.png")
-     
+          
             cv2.imwrite(save_path, plotvis)
+            cv2.imwrite(save_path.replace('.png', '_original.png'), orivis)
             
- 
+            if exp_name=="baseline_phishintel":
+                phishintel_redis.set(f"domain:{ori_domain}", datetime.now().isoformat())
+      
             ip,lat,lon,country,org = get_ip_and_geolocation(url)
             result["ip"] = ip
             result["latitude"] = lat
@@ -188,32 +188,19 @@ def analyze():
             result["country"] = country
             result["org"] = org
             
-      
-            blacklist_request = {
-                "exp_name": exp_name,
-                "ori_domain": ori_domain,
-                "url": url,
-                "pred_target": pred_target
-            }
-            if exp_name=="field_charcnn_phishintention":
-                try:
-                    requests.post(BLACKLIST_URL, json=blacklist_request)
-                except Exception as e:
-                    print(f"Error in submitting to blacklist service: {str(e)}")
 
-
+   
         save_result_to_mongodb(result,exp_name)
         
-        if exp_name=="phishintel":
-            phishintel_redis.set(f"url_cache:{url}", phish_category)
-
+        
+     
         print("phishintention: "+url)
         return jsonify({"success": True, "phish_category": phish_category})
 
     except Exception as e:
         print(f"Error in analyze: {url}  {str(e)}")
         return jsonify({"success": False, "error": str(e)})
-    finally:        
+    finally:      
         new_screenshot_path = screenshot_path.replace('.png','_new.png')
         new_html_path = new_screenshot_path.replace('.png', '.txt')
         new_info_path = new_screenshot_path.replace('.png', '_new_info.txt')
@@ -229,3 +216,5 @@ def analyze():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001, debug=False)    
+    #  gunicorn -w 8 --worker-class=gthread --threads 8 -t 120 -b 0.0.0.0:5001 app:app
+    # export PYTHON_MULTIPROCESSING_START_METHOD=spawn

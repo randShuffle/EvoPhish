@@ -4,7 +4,7 @@
 
 This repository contains three components:
 1. The EvoPhish **core** module (`/pipeline`).
-2. The **rbpd** module (`/rbpd`), which implements PhishIntention.
+2. The **rbpd** module (`/rbpd`), which implements PhishIntention with patch and the vlm patch service.
 
 ```
 ├── pipeline/                      # Core detection pipeline
@@ -12,9 +12,7 @@ This repository contains three components:
 │   ├── browser.sh                 # Launch browser screenshot
 │   ├── certstream_producer.py     # CertStream producer
 │   ├── common.py                  # Common variables
-│   ├── field_charcnn_phishintention.sh    # Start script
-│   ├── field_no_priority_charcnn_phishintention.sh   # Start script
-│   ├── field_no_priority_no_retrain_charcnn_phishintention.sh  # Start script
+│   ├── ablation_charcnn_phishintention_vlm.sh    # Start script
 │   ├── model_consumer.py          # Fast thinker Model task consumer
 │   ├── model_inference.py         # Core model inference
 │   ├── model_update.py            # Model update
@@ -41,6 +39,9 @@ This repository contains three components:
 │   │       ├── presets.py                 # Presets & constants
 │   │       ├── setup.sh                   # Env initialization 
 │   │       └── transforms.py              # Data preprocessing
+│   │   └── vlm                            # vlm 
+│   │       ├── start_vllm.sh			   # start vllm backend
+│   │       ├── stage3_rerank_service.py   # vlm patch service
 ```
 
 
@@ -90,6 +91,14 @@ Clone the repository and follow the steps below:
     python app.py
     ```
     
+5. Start vlm service
+
+   ```bash
+   cd rbpd/vlm
+   ./start_vllm.sh
+   python stage3_rerank_service.py
+   ```
+
 3. Start Certstream
 
    ```bash
@@ -169,9 +178,7 @@ Clone the repository and follow the steps below:
 
    ```bash
    # Start the experiment script.
-   ./field_charcnn_phishintention.sh
-   ./field_no_priority_charcnn_phishintention.sh
-   ./field_no_priority_no_retrain_charcnn_phishintention.sh
+   ./ablation_charcnn_phishintention_vlm.sh
    ```
    
 

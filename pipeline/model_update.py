@@ -29,7 +29,6 @@ import redis
 import os
 from torch.utils.data import DataLoader, random_split
 from common import BAGGING_MODEL_NUM
-from transformers import AutoModelForSequenceClassification,AutoConfig,DataCollatorWithPadding
 import pickle
 import pandas as pd
 import shutil
@@ -328,37 +327,12 @@ def get_training_data(exp_name,start_time=None):
     tn = set(past_db_data["tn"])
     fn = set(past_db_data["fn"])
     
-    print(len(tp),len(fp),len(tn),len(fn))
     
     phish_domain = tp | fn
     
     benign_needed = len(phish_domain)*BAGGING_MODEL_NUM
-    half = benign_needed // 2
-
-
-    fp_needed = half
-    tn_needed = benign_needed - fp_needed
-
-    fp_sample = set(random.sample(fp, min(len(fp), fp_needed)))
-    tn_sample = set(random.sample(tn, min(len(tn), tn_needed)))
-
-
-    if len(fp_sample) < fp_needed:
-        short = fp_needed - len(fp_sample)
-        tn_extra_candidates = list(tn - tn_sample)
-        tn_sample |= set(random.sample(tn_extra_candidates, min(len(tn_extra_candidates), short)))
-
-
-    if len(tn_sample) < tn_needed:
-        short = tn_needed - len(tn_sample)
-        fp_extra_candidates = list(fp - fp_sample)
-        fp_sample |= set(random.sample(fp_extra_candidates, min(len(fp_extra_candidates), short)))
-
-    benign_domain = tn_sample | fp_sample
-    
-    
-    
-    
+    benign_domain = get_fixed_benign_domains()
+    benign_domain = random.sample(benign_domain, min(len(benign_domain), benign_needed))
     print(f'phish size:{len(phish_domain)},benign size:{len(benign_domain)}')
     return transform_domain(phish_domain),transform_domain(benign_domain)
     
@@ -373,7 +347,7 @@ def get_fixed_benign_domains():
         fixed_benign_domains_list.extend(list(v))
         
     df = pd.read_csv('../datasets/raw/tranco_1m_subdomains.csv', header=None, names=['id', 'domain'])
-    tranco_list = df["domain"][:10000].tolist()
+    tranco_list = df["domain"].tolist()
     
     fixed_benign_domains_list.extend(tranco_list)
     fixed_benign_domains_list = transform_domain(fixed_benign_domains_list)
@@ -405,17 +379,7 @@ def train_tfidf_logisticregression_bagging_model(exp_name,phish_domain,benign_do
         start = i * chunk_size
         end = (i + 1) * chunk_size if i < BAGGING_MODEL_NUM - 1 else len(benign_domain)
         benign_part = benign_domain[start:end]
-        benign_fixed_domains = get_fixed_benign_domains()
-        tol_benign_nums = len(benign_part)
-        half = tol_benign_nums//2
-        
-        benign_fixed_domains_sample = list(random.sample(benign_fixed_domains, min(len(benign_fixed_domains), half)))
-        benign_part_sample = list(random.sample(benign_part, len(benign_part)-len(benign_fixed_domains_sample)))
-
-        benign_final = benign_fixed_domains_sample+benign_part_sample
-        
-        
-        
+       
         a,b = train_tfidf_logisticregression_model(exp_name,phish_domain,benign_part,i)
         print(f'TFIDF{i}:phish:{a},benign:{b}')
 
@@ -437,14 +401,6 @@ def train_fasttext_bagging_model(exp_name,phish_domain,benign_domain):
         start = i * chunk_size
         end = (i + 1) * chunk_size if i < BAGGING_MODEL_NUM - 1 else len(benign_domain)
         benign_part = benign_domain[start:end]
-        benign_fixed_domains = get_fixed_benign_domains()
-        tol_benign_nums = len(benign_part)
-        half = tol_benign_nums//2
-        
-        benign_fixed_domains_sample = list(random.sample(benign_fixed_domains, min(len(benign_fixed_domains), half)))
-        benign_part_sample = list(random.sample(benign_part, len(benign_part)-len(benign_fixed_domains_sample)))
-
-        benign_final = benign_fixed_domains_sample+benign_part_sample
         a,b = train_fasttext_single_model(exp_name,phish_domain,benign_part,i)
         print(f'Fasttext{i}:phish:{a},benign:{b}')
         
@@ -579,14 +535,6 @@ def train_charcnn_bagging_model(exp_name, phish_domain, benign_domain):
         start = i * chunk_size
         end = (i + 1) * chunk_size if i < BAGGING_MODEL_NUM - 1 else len(benign_domain)
         benign_part = benign_domain[start:end]
-        benign_fixed_domains = get_fixed_benign_domains()
-        tol_benign_nums = len(benign_part)
-        half = tol_benign_nums//2
-        
-        benign_fixed_domains_sample = list(random.sample(benign_fixed_domains, min(len(benign_fixed_domains), half)))
-        benign_part_sample = list(random.sample(benign_part, len(benign_part)-len(benign_fixed_domains_sample)))
-
-        benign_final = benign_fixed_domains_sample+benign_part_sample
        
         a,b = train_charcnn_model(exp_name,phish_domain,benign_part,i)
         print(f'Charcnn{i}:phish:{a},benign:{b}')
@@ -594,279 +542,6 @@ def train_charcnn_bagging_model(exp_name, phish_domain, benign_domain):
         
 
     return len(phish_domain), len(benign_domain)
-
-
-
-def train_canine_model(exp_name, phish_domain, benign_domain,index=None):
-    url_list = []
-    for domain in phish_domain:
-        url_list.append({"url":domain,"label":1})
-    
-    for domain in benign_domain:
-        url_list.append({"url":domain,"label":0})
-    
-    
-    def preprocess_function(examples, tokenizer):
-        return tokenizer(
-            examples['url'],
-            truncation=True,
-            max_length=64,
-            padding="max_length"
-        )
-
-    def encode_labels(examples):
-        return {'labels': examples['label']}
-    
-    
-    def compute_metrics(eval_pred):
-        logits, labels = eval_pred
-        predictions = logits.argmax(axis=1)
-        accuracy = accuracy_score(labels, predictions)
-        return_dict = {}
-        return_dict['accuracy'] = accuracy
-
-        average_type_list = ["binary","macro","micro","weighted"]
-        
-        for average in average_type_list:
-            precision = precision_score(labels, predictions, average=average,zero_division=0)
-            recall = recall_score(labels, predictions, average=average,zero_division=0)
-            f1 = f1_score(labels, predictions, average=average,zero_division=0)
-            return_dict[average+"_precision"]  = precision
-            return_dict[average+"_recall"]  = recall
-            return_dict[average+"_f1"]  = f1
-            
-            
-        return return_dict
-
-
-    
-    model_path = "../models/raw/canine-c"
-        
-    dataset = Dataset.from_list(url_list)
-    dataset = dataset.train_test_split(test_size=0.1, seed=42)
-    
-
-    tokenizer = AutoTokenizer.from_pretrained(model_path)
-    config = AutoConfig.from_pretrained(model_path)
-    
-    
-    config.hidden_size=128
-    config.intermediate_size=512
-    config.num_attention_heads = 4
-    config.num_hidden_layers = 1
-    config.problem_type = "single_label_classification"
-    config.pad_token_id = tokenizer.pad_token_id
-    config.num_labels = 2
-  
-    tokenized_dataset = dataset.map(
-        lambda x: preprocess_function(x, tokenizer),
-        num_proc=4,
-    )
-    tokenized_dataset = tokenized_dataset.map(encode_labels, num_proc=4) 
- 
-    data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
-    
-   
-    # model = AutoModelForSequenceClassification.from_pretrained(
-    # model_path,)
-    model = AutoModelForSequenceClassification.from_config(config)
-    #torch_dtype=torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16)
-    lr = 2e-4
-    epochs = 3
-    eval_steps = 10
-    save_steps = 10
-    output_dir = f"../models/ablation/{exp_name}/models/{index}"
-   
-            
-
-    
-   
-    training_args = TrainingArguments(
-    output_dir=output_dir,
-    eval_strategy="epoch",
-    learning_rate=lr,
-    per_device_train_batch_size=128,
-    per_device_eval_batch_size=1024,
-    num_train_epochs=epochs,
-    weight_decay=0.01,
-    logging_steps=10,
-    logging_first_step=True,
-    save_strategy="epoch", 
-    save_steps=None,  
-    load_best_model_at_end=True,
-    fp16=not torch.cuda.is_bf16_supported(),
-    bf16=torch.cuda.is_bf16_supported(),
-    tf32=True,
-    dataloader_num_workers=8,
-    lr_scheduler_type="cosine",
-    warmup_ratio=0.1,
-    save_total_limit=2,
-    label_names=["labels"],
-    ddp_find_unused_parameters=True,
-    metric_for_best_model="binary_f1",  
-    greater_is_better=True,     
-)
-
-    
-
-
-
-    trainer = Trainer(
-        model=model,
-        args=training_args,
-        train_dataset=tokenized_dataset["train"],
-        eval_dataset=tokenized_dataset["test"],
-        tokenizer=tokenizer,
-        data_collator=data_collator,
-        compute_metrics=compute_metrics
-    )
-
-
-    trainer.train()
-
-
-    save_path = f"../models/ablation/ablation_canine_phishintention/models/{index}/best"
-
-    model.save_pretrained(save_path)
-    tokenizer.save_pretrained(save_path)
-
-
-    return len(phish_domain),len(benign_domain)
-    
-    
-    
-
-def train_canine_bagging_model(exp_name, phish_domain, benign_domain):
-
-    benign_domain = list(benign_domain)
-    random.shuffle(benign_domain)
-    chunk_size = len(benign_domain) // BAGGING_MODEL_NUM
-    
-    for i in range(BAGGING_MODEL_NUM):
-        print(f"Training model{i}")
-
-        start = i * chunk_size
-        end = (i + 1) * chunk_size if i < BAGGING_MODEL_NUM - 1 else len(benign_domain)
-        benign_part = benign_domain[start:end]
-        benign_fixed_domains = get_fixed_benign_domains()
-        tol_benign_nums = len(benign_part)
-        half = tol_benign_nums//2
-        
-        benign_fixed_domains_sample = list(random.sample(benign_fixed_domains, min(len(benign_fixed_domains), half)))
-        benign_part_sample = list(random.sample(benign_part, len(benign_part)-len(benign_fixed_domains_sample)))
-
-        benign_final = benign_fixed_domains_sample+benign_part_sample
-       
-       
-        a,b = train_canine_model(exp_name,phish_domain,benign_part,i)
-        print(f'Charcnn{i}:phish:{a},benign:{b}')
-        
-    return len(phish_domain), len(benign_domain)
-
-
-
-
-
-
-
-def train_ood_model(exp_name,phish_domains,benign_domains):
-    typo_model = IsTypo(model_dir=TYPO_MODEL_DIR)
-    all_domains = list(phish_domains)+list(benign_domains)
-    all_embeddings = typo_model.get_embeddings(all_domains).cpu().numpy()
-   
-
-    faiss_index = FaissIVFFlatIndex(num_vectors=len(all_embeddings), d=768, gpu_id=0)
-    faiss_index.index.train(all_embeddings)
-    faiss_index.index.add(all_embeddings)
-    
-    save_dir = os.path.join("..", "models", "ablation", exp_name, "faiss")
-    os.makedirs(save_dir, exist_ok=True)
-    save_path = os.path.join(save_dir, "faiss.index")
-    cpu_index = faiss.index_gpu_to_cpu(faiss_index.index)
-
-    faiss.write_index(cpu_index, save_path)
-    print(f"[INFO] Faiss index saved to: {save_path}")
-    
-
-from transformers import AutoTokenizer, AutoModelForMaskedLM
-from transformers import DataCollatorForLanguageModeling
-from datasets import Dataset
-from transformers import Trainer, TrainingArguments
-import math
-def train_ood_model_mlm(exp_name, phish_domains, benign_domains):
-    raw_model_path = "../models/raw/tinybert"
-    all_domains = phish_domains+benign_domains
-    
-    tokenizer = AutoTokenizer.from_pretrained(raw_model_path)
-    model = AutoModelForMaskedLM.from_pretrained(raw_model_path)
-    dataset = Dataset.from_dict({"text": all_domains})
-
-
-    dataset = dataset.train_test_split(test_size=0.1, seed=42)
-    
-    data_collator = DataCollatorForLanguageModeling(
-        tokenizer=tokenizer, 
-        mlm=True, 
-        mlm_probability=0.2
-    )
-
-    def tokenize_function(examples):
-        return tokenizer(
-            examples["text"], 
-            truncation=True, 
-            padding="max_length", 
-            max_length=64
-        )
-
-    tokenized_dataset = dataset.map(tokenize_function, num_proc=4, remove_columns=["text"])
-    
-    save_dir = f"../models/ablation/{exp_name}/ood"
-    os.makedirs(save_dir, exist_ok=True)
-    
-    training_args = TrainingArguments(
-        output_dir=save_dir,
-        evaluation_strategy="steps",
-        eval_steps=100,
-        logging_steps=100,
-        save_steps=100,
-        per_device_train_batch_size=2048,
-        per_device_eval_batch_size=2048,
-        num_train_epochs=5,
-        weight_decay=0.01,
-        learning_rate=5e-5,
-        save_total_limit=2,
-        report_to="none", 
-        load_best_model_at_end=True,
-        metric_for_best_model="eval_loss",
-        greater_is_better=False, 
-    )
-
-
-    def compute_metrics(eval_pred):
-        loss = eval_pred.metrics["eval_loss"]
-        try:
-            perplexity = math.exp(loss)
-        except OverflowError:
-            perplexity = float("inf")
-        return {"perplexity": perplexity, "eval_loss": loss}
-
-    trainer = Trainer(
-        model=model,
-        args=training_args,
-        train_dataset=tokenized_dataset["train"],
-        eval_dataset=tokenized_dataset["test"],
-        tokenizer=tokenizer,
-        data_collator=data_collator,
-    )
-
-    trainer.train()
- 
-    final_dir = os.path.join(save_dir, "final")
-    os.makedirs(final_dir, exist_ok=True)
-    trainer.save_model(final_dir)
-
-    eval_results = trainer.evaluate()
-    print("Final evaluation:", eval_results)
 
 
 
@@ -960,10 +635,7 @@ if __name__ == '__main__':
             phish_num,benign_num = train_charcnn_bagging_model(args.exp_name,phish_domain,benign_domain)
         elif "tfidf" in args.exp_name:
             phish_num,benign_num = train_tfidf_logisticregression_bagging_model(args.exp_name,phish_domain,benign_domain)
-        elif "canine" in args.exp_name:
-            phish_num,benign_num = train_canine_bagging_model(args.exp_name,phish_domain,benign_domain)
-            
-            
+       
        
             
 
