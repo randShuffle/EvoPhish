@@ -10,11 +10,9 @@
 - Volume: 1441 domains
 - Observation: This campaign conducts OAuth-style QR code session hijacking for account takeover. Fake Telegram QR login pages steal user sessions once scanned. Attackers seize compromised accounts to spread crypto and investment scams, with activity spiking during holiday seasons.
 
-![Telegram Temporal Trend](../assets/report_telegram_daily_reports.png)
-Temporal Trend
-
-![Telegram Sample Screenshot 1](../assets/campaign_telegram_variant_a.png)
-Sample Screenshot 1
+![Telegram Temporal Trend](../assets/report_telegram_daily_reports.png) | ![Telegram Sample Screenshot 1](../assets/campaign_telegram_variant_a.png)
+:---: | :---:
+Temporal Trend | Sample Screenshot 1
 
 ### E-Commerce & Retail Campaigns
 
@@ -26,14 +24,7 @@ Sample Screenshot 1
 - Volume: 10 domains
 - Observation: On December 14, a TikTok phishing trend erupted, with the number of daily reports surging to 5. Although sporadic reports occurred afterward, it served as a warning of the persistent threat of phishing.
 
-<!-- ![TikTok Temporal Trend](../assets/report_tiktok_daily_reports.png)
-Temporal Trend
 
-![TikTok Sample Screenshot 1](../assets/campaign_tiktok_storefront_homepage_variant_a.png)
-Sample Screenshot 1
-
-![TikTok Sample Screenshot 2](../assets/campaign_tiktok_store_login_page.png)
-Sample Screenshot 2 -->
 ![TikTok Temporal Trend](../assets/report_tiktok_daily_reports.png) | ![TikTok Sample Screenshot 1](../assets/campaign_tiktok_storefront_homepage_variant_a.png) | ![TikTok Sample Screenshot 2](../assets/campaign_tiktok_store_login_page.png)
 :---: | :---: | :---:
 Temporal Trend | Sample Screenshot 1 | Sample Screenshot 2
@@ -46,11 +37,9 @@ Temporal Trend | Sample Screenshot 1 | Sample Screenshot 2
 - Volume: 12 domains
 - Observation: Phishing reports targeting Alibaba remained at zero for a long time before December 28, followed by three significant spikes in late December and early January of the following year. This is likely related to the concentrated outbreak of phishing attacks by threat actors targeting consumers and merchants during the New Year shopping season.
 
-![Alibaba Temporal Trend](../assets/report_alibaba_daily_reports.png)
-Temporal Trend
-
-![Alibaba Sample Screenshot](../assets/campaign_1688_order_page_variant_b.png)
-Sample screenshot
+![Alibaba Temporal Trend](../assets/report_alibaba_daily_reports.png) | ![Alibaba Sample Screenshot](../assets/campaign_1688_order_page_variant_b.png)
+:---: | :---:
+Temporal Trend | Sample screenshot
 
 #### Walmart Phishing Campaign:
 
@@ -60,14 +49,9 @@ Sample screenshot
 - Volume: 13 domains
 - Observation: During the year-end promotion season, the number of counterfeit Walmart phishing websites suddenly surged to 6 on December 28, but the wave of attacks was quickly contained at the beginning of the year.
 
-![Walmart Temporal Trend](../assets/report_walmart_daily_reports.png)
-Temporal Trend
-
-![Walmart Sample Screenshot 1](../assets/campaign_walmart_portal_login.png)
-Sample Screenshot 1
-
-![Walmart Sample Screenshot 2](../assets/campaign_walmart_chinese_login.png)
-Sample Screenshot 2
+![Walmart Temporal Trend](../assets/report_walmart_daily_reports.png) | ![Walmart Sample Screenshot 1](../assets/campaign_walmart_portal_login.png) | ![Walmart Sample Screenshot 2](../assets/campaign_walmart_chinese_login.png)
+:---: | :---: | :---:
+Temporal Trend | Sample Screenshot 1 | Sample Screenshot 2
 
 ### Financial Services Campaigns
 
@@ -79,11 +63,9 @@ Sample Screenshot 2
 - Volume: 16 domains
 - Observation: In early December, there was a high-intensity pulse of "CICC" phishing attacks, with nearly 7 reports recorded in a single day. The attacks then subsided quickly, followed by a rebound in mid-December with 5 reports. After a nearly two-week quiet period, the activity resurfaced in early January of the following year, with 4 reports logged.
 
-![CICC Temporal Trend](../assets/report_cicc_daily_reports.png)
-Temporal Trend
-
-![CICC Sample Screenshot](../assets/campaign_cicc_registration_page_variant_b.png)
-Sample screenshot
+![CICC Temporal Trend](../assets/report_cicc_daily_reports.png) | ![CICC Sample Screenshot](../assets/campaign_cicc_registration_page_variant_b.png)
+:---: | :---:
+Temporal Trend | Sample screenshot
 
 ### Cloud Services & SaaS Campaigns
 
@@ -95,11 +77,9 @@ Sample screenshot
 - Volume: 12 domains
 - Observation: From mid-December to early January of the following year, Gmail phishing reports showed a cyclical pattern, with two peaks occurring around December 28 and early January, indicating the attackers' continuously evolving tactics.
 
-![Gmail Temporal Trend](../assets/report_gmail_daily_reports.png)
-Temporal Trend
-
-![Gmail Sample Screenshot](../assets/campaign_google_signin_page.png)
-Sample screenshot
+![Gmail Temporal Trend](../assets/report_gmail_daily_reports.png) | ![Gmail Sample Screenshot](../assets/campaign_google_signin_page.png)
+:---: | :---:
+Temporal Trend | Sample screenshot
 
 #### Orange Phishing Campaign:
 
@@ -109,11 +89,9 @@ Sample screenshot
 - Volume: 254 domains
 - Observation: Attackers exploited three high-profile public announcements from Orange in early December 2025 (dividend payment, satellite SMS service launch, and MasOrange acquisition) by sending phishing emails and SMS messages impersonating official notifications, resulting in a sharp spike in phishing reports immediately after the events, which then declined as the news cycle faded.
 
-![Orange Temporal Trend](../assets/report_orange_daily_reports.png)
-Temporal Trend
-
-![Orange Sample Screenshot](../assets/campaign_orange_webmail_login_variant_a.png)
-Sample screenshot
+![Orange Temporal Trend](../assets/report_orange_daily_reports.png) | ![Orange Sample Screenshot](../assets/campaign_orange_webmail_login_variant_a.png)
+:---: | :---:
+Temporal Trend | Sample screenshot
 
 ### Cryptocurrency & NFT Campaigns
 
@@ -125,11 +103,9 @@ Sample screenshot
 - Volume: 62 domains
 - Observation: From late December to early January of the following year, there were two concentrated outbreaks of phishing activities targeting Bybit users. First, there was a small-scale probe at the end of December, which then quickly escalated into two distinct peaks in early January, with the number of reports exceeding 20 at one point before rapidly dropping back to near zero, like a wave of targeted attacks with a clear rhythm.
 
-![Bybit Temporal Trend](../assets/report_bybit_daily_reports.png)
-Temporal Trend
-
-![Bybit Sample Screenshot](../assets/campaign_bybit_chinese_landing_page.png)
-Sample screenshot
+![Bybit Temporal Trend](../assets/report_bybit_daily_reports.png) | ![Bybit Sample Screenshot](../assets/campaign_bybit_chinese_landing_page.png)
+:---: | :---:
+Temporal Trend | Sample screenshot
 
 
 
