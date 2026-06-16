@@ -1,5 +1,21 @@
 ## Phishing Campaign Gallery
 
+### Social Media Platform Phishing Campaigns
+
+#### Telegram Phishing Campaign:
+
+- Target: **Telegram**
+- First-seen: 2026-05-28
+- Last-seen: 2026-06-16
+- Volume: 1441 domains
+- Observation: This campaign conducts OAuth-style QR code session hijacking for account takeover. Fake Telegram QR login pages steal user sessions once scanned. Attackers seize compromised accounts to spread crypto and investment scams, with activity spiking during holiday seasons.
+
+![Telegram Temporal Trend](../assets/report_telegram_daily_reports.png)
+Temporal Trend
+
+![Telegram Sample Screenshot 1](../assets/campaign_telegram_variant_a.png)
+Sample Screenshot 1
+
 ### E-Commerce & Retail Campaigns
 
 #### TikTok Phishing Campaign:
