@@ -26,14 +26,17 @@ Sample Screenshot 1
 - Volume: 10 domains
 - Observation: On December 14, a TikTok phishing trend erupted, with the number of daily reports surging to 5. Although sporadic reports occurred afterward, it served as a warning of the persistent threat of phishing.
 
-![TikTok Temporal Trend](../assets/report_tiktok_daily_reports.png)
+<!-- ![TikTok Temporal Trend](../assets/report_tiktok_daily_reports.png)
 Temporal Trend
 
 ![TikTok Sample Screenshot 1](../assets/campaign_tiktok_storefront_homepage_variant_a.png)
 Sample Screenshot 1
 
 ![TikTok Sample Screenshot 2](../assets/campaign_tiktok_store_login_page.png)
-Sample Screenshot 2
+Sample Screenshot 2 -->
+![TikTok Temporal Trend](../assets/report_tiktok_daily_reports.png) | ![TikTok Sample Screenshot 1](../assets/campaign_tiktok_storefront_homepage_variant_a.png) | ![TikTok Sample Screenshot 2](../assets/campaign_tiktok_store_login_page.png)
+:---: | :---: | :---:
+Temporal Trend | Sample Screenshot 1 | Sample Screenshot 2
 
 #### Alibaba Phishing Campaign:
 
