@@ -10,7 +10,7 @@
 - Volume: 1441 domains
 - Observation: This campaign conducts OAuth-style QR code session hijacking for account takeover. Fake Telegram QR login pages steal user sessions once scanned. Attackers seize compromised accounts to spread crypto and investment scams, with activity spiking during holiday seasons.
 
-![Telegram Temporal Trend](../assets/report_telegram_daily_reports.png) | ![Telegram Sample Screenshot 1](../assets/campaign_telegram_variant_a.pdf)
+![Telegram Temporal Trend](../assets/report_telegram_daily_reports.png) | ![Telegram Sample Screenshot 1](../assets/campaign_telegram_variant_a.png)
 :---: | :---:
 Temporal Trend | Sample Screenshot 1
 
@@ -136,7 +136,15 @@ Temporal Trend | Sample screenshot
 - Fast thinker classification score: **0.92**
 - Reason: **The domain "qdkheu.top" had already appeared on 2025-12-17 and 2025-12-18, so it was classified as positive by the fast thinker classifier.**
 
-![Positive Example 2](../assets/campaign_chinese_broker_login_page.png)
+
+<div align="center">
+  <img
+    src="../assets/campaign_chinese_broker_login_page.png"
+    alt="Positive Example 2"
+    width="50%"
+    height="50%"
+  />
+</div>
 
 #### Example 3: ciccdijd932jjd2o.bib-btc.vip
 
@@ -144,7 +152,16 @@ Temporal Trend | Sample screenshot
 - Fast thinker classification score: **0.75**
 - Reason: **The feature "ciccdijd932jjd2o.bib-btc" had already appeared on 2025-12-09, and it only changed the top-level domain, so it was classified as positive by the fast thinker classifier.**
 
-![Positive Example 3](../assets/campaign_cicc_registration_page_variant_a.png)
+
+
+<div align="center">
+  <img
+    src="../assets/campaign_cicc_registration_page_variant_a.png"
+    alt="Positive Example 3"
+    width="50%"
+    height="50%"
+  />
+</div>
 
 #### Example 4: adsgoogle.partner-verification-center.com
 
@@ -152,7 +169,15 @@ Temporal Trend | Sample screenshot
 - Fast thinker classification score: **0.63**
 - Reason: **The feature "google" had already appeared on 2025-12-15 and 2025-12-17. The feature "verification" had already appeared on 2025-12-17 and 2025-12-21. So it was classified as positive by the fast thinker classifier.**
 
-![Positive Example 4](../assets/campaign_google_2step_verification.png)
+
+<div align="center">
+  <img
+    src="../assets/campaign_google_2step_verification.png"
+    alt="Positive Example 4"
+    width="50%"
+    height="50%"
+  />
+</div>
 
 #### Example 5: 99nightsintheforestdeerplushie.com
 
@@ -160,7 +185,15 @@ Temporal Trend | Sample screenshot
 - Fast thinker classification score: **0.72**
 - Reason: **The feature "99nights" had already appeared on 2025-12-31 and 2026-01-01. So it was classified as positive by the fast thinker classifier.**
 
-![Positive Example 5](../assets/campaign_roblox_tracking_order_page.png)
+
+<div align="center">
+  <img
+    src="../assets/campaign_roblox_tracking_order_page.png"
+    alt="Positive Example 5"
+    width="50%"
+    height="50%"
+  />
+</div>
 
 ### Reported by the High-uncertainty Channel
 
@@ -172,7 +205,15 @@ Domains are reported through the uncertainty channel because the domain falls ne
 - Fast thinker classification score: **0.16**
 - Reason: **On 2026-01-06, this type of domain appeared for the first time in the campaign.**
 
-![High-uncertainty Example 1](../assets/campaign_walmart_giftcard_promo.png)
+
+<div align="center">
+  <img
+    src="../assets/campaign_walmart_giftcard_promo.png"
+    alt="High-uncertainty Example 1"
+    width="50%"
+    height="50%"
+  />
+</div>
 
 #### Example 2: mail.mgg-remat.com.ro
 
@@ -180,7 +221,15 @@ Domains are reported through the uncertainty channel because the domain falls ne
 - Fast thinker classification score: **0.35**
 - Reason: **On 2025-12-09, a domain of the type "mail.xxxx.ro" appeared for the first time in this campaign.**
 
-![High-uncertainty Example 2](../assets/campaign_orange_webmail_login_variant_b.png)
+
+<div align="center">
+  <img
+    src="../assets/campaign_orange_webmail_login_variant_b.png"
+    alt="High-uncertainty Example 2"
+    width="50%"
+    height="50%"
+  />
+</div>
 
 #### Example 3: www.tiktshopp.cc
 
@@ -188,7 +237,15 @@ Domains are reported through the uncertainty channel because the domain falls ne
 - Fast thinker classification score: **0.49**
 - Reason: **On 2025-12-13, a domain of the type "tiktshopp.xxx" appeared for the first time in this campaign.**
 
-![High-uncertainty Example 3](../assets/campaign_tiktok_storefront_homepage_variant_b.png)
+
+<div align="center">
+  <img
+    src="../assets/campaign_tiktok_storefront_homepage_variant_b.png"
+    alt="High-uncertainty Example 3"
+    width="50%"
+    height="50%"
+  />
+</div>
 
 ### Reported by the Typosquatting Channel
 
@@ -200,7 +257,15 @@ Domains are reported through the uncertainty channel because the domain falls ne
 - Fast thinker classification score: **0.32**
 - Reason: **The official domain is www.1688.com. This domain is relatively similar to the official one and uses a subdomain misuse technique.**
 
-![Typosquatting Example 1](../assets/campaign_1688_order_page_variant_a.png)
+
+<div align="center">
+  <img
+    src="../assets/campaign_1688_order_page_variant_a.png"
+    alt="Typosquatting Example 1"
+    width="50%"
+    height="50%"
+  />
+</div>
 
 #### Example 2: sf-express-com-hkq6.top
 
@@ -208,7 +273,15 @@ Domains are reported through the uncertainty channel because the domain falls ne
 - Fast thinker classification score: **0.39**
 - Reason: **The official domain is sf-express.com. This domain is relatively similar to the official one and uses a hyphen insertion + TLD substitution technique.**
 
-![Typosquatting Example 2](../assets/campaign_admin_login_portal.png)
+
+<div align="center">
+  <img
+    src="../assets/campaign_admin_login_portal.png"
+    alt="Typosquatting Example 2"
+    width="50%"
+    height="50%"
+  />
+</div>
 
 #### Example 3: netflix.avdhoothadke.com
 
@@ -216,7 +289,15 @@ Domains are reported through the uncertainty channel because the domain falls ne
 - Fast thinker classification score: **0.37**
 - Reason: **Netflix's official domain is netflix.com. This domain is relatively similar to the official one and uses a subdomain misuse technique.**
 
-![Typosquatting Example 3](../assets/campaign_netflix_signin_page.png)
+
+<div align="center">
+  <img
+    src="../assets/campaign_netflix_signin_page.png"
+    alt="Typosquatting Example 3"
+    width="50%"
+    height="50%"
+  />
+</div>
 
 #### Example 4: whatsaqq.net
 
@@ -224,4 +305,12 @@ Domains are reported through the uncertainty channel because the domain falls ne
 - Fast thinker classification score: **0.38**
 - Reason: **The official domain of WhatsApp is whatsapp.com. The domain uses a character replacement + TLD substitution technique, replacing the double "pp" in "whatsapp" with visually similar "qq", combined with TLD substitution (.com -> .net).**
 
-![Typosquatting Example 4](../assets/campaign_whatsapp_phone_verification.png)
+
+<div align="center">
+  <img
+    src="../assets/campaign_whatsapp_phone_verification.png"
+    alt="Typosquatting Example 4"
+    width="50%"
+    height="50%"
+  />
+</div>
