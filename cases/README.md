@@ -10,7 +10,7 @@
 - Volume: 1441 domains
 - Observation: This campaign conducts OAuth-style QR code session hijacking for account takeover. Fake Telegram QR login pages steal user sessions once scanned. Attackers seize compromised accounts to spread crypto and investment scams, with activity spiking during holiday seasons.
 
-![Telegram Temporal Trend](../assets/report_telegram_daily_reports.pdf) | ![Telegram Sample Screenshot 1](../assets/campaign_telegram_variant_a.pdf)
+![Telegram Temporal Trend](../assets/report_telegram_daily_reports.png) | ![Telegram Sample Screenshot 1](../assets/campaign_telegram_variant_a.pdf)
 :---: | :---:
 Temporal Trend | Sample Screenshot 1
 
@@ -122,7 +122,6 @@ Temporal Trend | Sample screenshot
 - Reason: **The feature "opensea-" had already appeared on 2025-12-09, so it was classified as positive by the fast thinker classifier.**
 
 ![Positive Example 1](../assets/campaign_opensea_connect_wallet.png){:width="50%"}
-
 
 #### Example 2: ihvzpz2.qdkheu.top
 
