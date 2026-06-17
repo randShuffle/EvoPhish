@@ -121,7 +121,12 @@ Temporal Trend | Sample screenshot
 - Fast thinker classification score: **0.90**
 - Reason: **The feature "opensea-" had already appeared on 2025-12-09, so it was classified as positive by the fast thinker classifier.**
 
-![Positive Example 1](../assets/campaign_opensea_connect_wallet.png){:width="50%"}
+<img 
+  src="../assets/campaign_opensea_connect_wallet.png" 
+  alt="Positive Example 1"
+  width="50%" 
+  height="50%"
+/>
 
 #### Example 2: ihvzpz2.qdkheu.top
 
