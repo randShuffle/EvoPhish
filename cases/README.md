@@ -10,9 +10,23 @@
 - Volume: 1441 domains
 - Observation: This campaign conducts OAuth-style QR code session hijacking for account takeover. Fake Telegram QR login pages steal user sessions once scanned. Attackers seize compromised accounts to spread crypto and investment scams, with activity spiking during holiday seasons.
 
-![Telegram Temporal Trend](../assets/report_telegram_daily_reports.png) | ![Telegram Sample Screenshot 1](../assets/campaign_telegram.png)
+<!-- ![Telegram Temporal Trend](../assets/report_telegram_daily_reports.png) | ![Telegram Sample Screenshot 1](../assets/campaign_telegram.png)
 :---: | :---:
-Temporal Trend | Sample Screenshot 1
+Temporal Trend | Sample Screenshot 1 -->
+<table>
+  <tr>
+    <td width="40%">
+      <img src="../assets/report_telegram_daily_reports.png" width="100%">
+    </td>
+    <td width="60%">
+      <img src="../assets/campaign_telegram.png" width="100%">
+    </td>
+  </tr>
+  <tr>
+    <td align="center">Temporal Trend</td>
+    <td align="center">Sample Screenshot 1</td>
+  </tr>
+</table>
 
 ### E-Commerce & Retail Campaigns
 
