@@ -164,8 +164,13 @@ def load_config(_DEVICE,reload_targetlist=False):
     logging.info('Loading cached reference logos embeddings')
     LOGO_FEATS, LOGO_FILES = np.load(os.path.join(os.path.dirname(__file__),'LOGO_FEATS.npy')), \
                              np.load(os.path.join(os.path.dirname(__file__),'LOGO_FILES.npy'))
-    
-    
+
+    # LOGO_FILES.npy stores paths relative to the targetlist dir; resolve to absolute
+    LOGO_FILES = np.array([
+        f if os.path.isabs(f) else os.path.join(targetlist_dir, f)
+        for f in LOGO_FILES
+    ])
+
 
     DOMAIN_MAP_PATH = configs['SIAMESE_MODEL']['DOMAIN_MAP_PATH']
     DOMAIN_MAP = load_domain_map(DOMAIN_MAP_PATH)

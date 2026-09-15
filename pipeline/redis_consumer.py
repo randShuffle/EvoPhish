@@ -2,17 +2,21 @@ import time
 import requests
 import redis
 import json
+import random
 import argparse
-from common import EXP_NAMES,REDIS_PORT,SCREENSHOT_BASIC_PORT
+from common import EXP_NAMES,REDIS_PORT,parse_risk_ratio,screenshot_port
 from datetime import datetime
 
 class PriorityQueueWorker:
     def __init__(self, exp_name, redis_host='localhost', redis_port=REDIS_PORT):
         self.exp_name = exp_name
         self.redis = redis.Redis(host=redis_host, port=redis_port, db=0)
-        self.screenshot_url = f"http://localhost:{SCREENSHOT_BASIC_PORT + EXP_NAMES.index(args.exp_name)}/screenshot"
+        self.screenshot_url = f"http://localhost:{screenshot_port(self.exp_name)}/screenshot"
+        # 风险优先比例，由实验名 _r<n> 后缀解析
+        self.risk_ratio = parse_risk_ratio(exp_name)
+        self.use_rand = self.risk_ratio < 1.0
 
-        
+
     def get_top_element(self,queue_key):
         result = self.redis.zrevrange(queue_key, 0, 0)
         if result:
@@ -32,34 +36,29 @@ class PriorityQueueWorker:
                 return {}
         return {}
 
-    def process_element(self, element,is_ood):      
-        if is_ood:
-            metadata_key = f'domain_metadata:{self.exp_name}:ood'
-            queue_key = f'ood:{self.exp_name}'
-        else:
-            metadata_key = f'domain_metadata:{self.exp_name}:risk'
-            queue_key = f'risk:{self.exp_name}'
-        
+    def process_element(self, element, queue_type):
+        metadata_key = f'domain_metadata:{self.exp_name}:{queue_type}'
+        queue_key = f'{queue_type}:{self.exp_name}'
+
         metadata = self.get_metadata(element,metadata_key)
         probability = metadata.get("probability", "N/A")
         is_typo = metadata.get("is_typo", "N/A")
-        ood_score = metadata.get("ood_score", "N/A")
-    
+        sample_type = metadata.get("sample_type", "risk")
+
 
         try:
-            
-            resp = requests.post(self.screenshot_url, timeout=2,json={"ori_domain": element,     
+
+            resp = requests.post(self.screenshot_url, timeout=2,json={"ori_domain": element,
                     "domain_classifier":int(probability>=0.5),
                     "domain_classifier_prob":probability,
                     "is_typo":is_typo,
                     "exp_name":self.exp_name,
                     "model_version":-1,
                     "timestamp":datetime.now().isoformat(),
-                    "ood_score":ood_score,
-                    "is_ood":is_ood
+                    "sample_type":sample_type
                     })
             if resp.status_code == 200:
-                print(f"[✓] {self.exp_name}***Success: {element} (typo={is_typo}, prob={probability},ood:{is_ood}), removing from queue.")
+                print(f"[✓] {self.exp_name}***Success: {element} (typo={is_typo}, prob={probability}, sample_type={sample_type}), removing from queue.")
                 self.remove_element(element,queue_key,metadata_key)
                 return True
             else:
@@ -69,30 +68,22 @@ class PriorityQueueWorker:
             return False
 
     def run(self):
-        start = datetime.now()
-        i = 0
-
-        if "baseline" in self.exp_name:
-            queue_cycle = ["risk"]
-        else:
-            queue_cycle = ["risk"]
-            
-        cycle_len = len(queue_cycle)
-        index = 0
+        print(f"🌀 Priority Queue Worker started for exp_num: {self.exp_name} (risk_ratio={self.risk_ratio})")
 
         while True:
             try:
-                queue_type = queue_cycle[index % cycle_len]
-                index += 1
 
-                queue_key = f'risk:{self.exp_name}' if queue_type == "risk" else f'ood:{self.exp_name}'
+                # 风险/随机混合采样：按 x:(1-x) 概率在 risk/rand 队列间选择
+                if self.use_rand:
+                    queue_type = "risk" if random.random() < self.risk_ratio else "rand"
+                else:
+                    queue_type = "risk"
+
+                queue_key = f'{queue_type}:{self.exp_name}'
                 element = self.get_top_element(queue_key)
 
                 if element:
-                    self.process_element(element, is_ood=int(queue_type=="ood"))
-                    i += 1
-                    if i % 10 == 0:
-                        pass
+                    self.process_element(element, queue_type)
                 else:
                     time.sleep(0.1)
             except:

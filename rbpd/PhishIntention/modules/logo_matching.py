@@ -396,7 +396,7 @@ def cache_reference_list(model, targetlist_path: str, grayscale=False):
                 try:
                     logo_feat_list.append(get_embedding(img=os.path.join(targetlist_path, target, logo_path),
                                                         model=model, grayscale=grayscale))
-                    file_name_list.append(str(os.path.join(targetlist_path, target, logo_path)))
+                    file_name_list.append(str(os.path.join(target, logo_path)))
                 except OSError:
                     print(f"Error opening image: {os.path.join(targetlist_path, target, logo_path)}")
                     continue

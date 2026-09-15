@@ -2,13 +2,13 @@ import json
 from datetime import datetime
 from confluent_kafka import Consumer, KafkaException, Producer
 from model_inference import IsTypo
-from common import KAFKA_BROKER, KAFKA_PORT,TYPO_MODEL_DIR
+from common import KAFKA_BROKER, KAFKA_PORT,TYPO_MODEL_DIR,MONGO_URI,MONGO_DB_NAME
 import redis
 import time
 from pymongo import MongoClient
 import msgpack
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 BATCH_SIZE = 5000
 MEMORY_CACHE_TTL = 60*5    
@@ -23,12 +23,8 @@ class TypoInferenceConsumer:
         self.redis = redis.Redis(host='localhost', port=6381, db=0)
         self.memory_cache = {}
         
-        username = "yourusername"
-        password = "yourpassword"
-        MONGO_URI = f'mongodb://{username}:{password}@localhost:27019/'
-        DB_NAME = 'certstream'
         self.client = MongoClient(MONGO_URI)
-        self.db = self.client[DB_NAME]
+        self.db = self.client[MONGO_DB_NAME]
         self.collection = self.db["throughput"]
         
         

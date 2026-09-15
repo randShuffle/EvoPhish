@@ -32,80 +32,7 @@ from common import BAGGING_MODEL_NUM
 import pickle
 import pandas as pd
 import shutil
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-
-HOSTING_PLATFORMS = {
- '4everland.app',
- 'amazonaws.com',
- 'amplifyapp.com',
- 'azurewebsites.net',
- 'backblazeb2.com',
- 'biz.id',
- 'cloudaccess.host',
- 'cloudfront.net',
- 'cloudwaysapps.com',
- 'contabostorage.com',
- 'daftpage.com',
- 'digitaloceanspaces.com',
- 'firebaseapp.com',
- 'format.com',
- 'framer.app',
- 'framer.website',
- 'github.io',
- 'godaddysites.com',
- 'hostingersite.com',
- 'kinsta.cloud',
- 'linodeobjects.com',
- 'mmm.page',
- 'my.id',
- 'mystrikingly.com',
- 'netlify.app',
- 'on-fleek.app',
- 'ondigitalocean.app',
- 'pages.dev',
- 'plesk.page',
- 'r2.dev',
- 'replit.app',
- 'replit.dev',
- 'rollout.site',
- 'squarespace.com',
- 'surge.sh',
- 'trycloudflare.com',
- 'typedream.app',
- 'univer.se',
- 'vercel.app',
- 'web.app',
- 'webflow.io',
- 'weebly.com',
- 'weeblysite.com',
- 'wixsite.com',
- 'wixstudio.com',
- 'wixstudio.io',
- 'workers.dev',
- 'wpenginepowered.com',
- 'zeabur.app'
-}
-
-
-def transform_domain(domains):
-    transformed_domains = set()
-    for domain in domains:
-        for hosting_platform in HOSTING_PLATFORMS:
-            if domain.endswith(hosting_platform):
-                domain = domain[:-len(hosting_platform)]
-                if domain.endswith('.'):
-                    domain = domain[:-1]
-                break
-        transformed_domains.add(domain)
-    return list(transformed_domains)
-
-
-
-
-
-
-
-
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 
 class CharCNN(nn.Module):
@@ -263,12 +190,8 @@ class FaissIVFFlatIndex:
 
 
 
-username = "yourusername"
-password = "yourpassword"
-MONGO_URI = f'mongodb://{username}:{password}@localhost:27019/'
-DB_NAME = 'certstream'
 client = MongoClient(MONGO_URI)
-db = client[DB_NAME]
+db = client[MONGO_DB_NAME]
 
 
 
@@ -319,38 +242,36 @@ def get_from_all_data(query,exp_name):
     
 
 
+def get_warmup_domains():
+    """warmup 种子域名（已知钓鱼），每次重训练都并入 phish 侧"""
+    with open(WARMUP_DIR, 'rb') as f:
+        return set(pickle.load(f))
+
+
 def get_training_data(exp_name,start_time=None):
-    
+
     past_db_data = get_data_from_db(exp_name)
     tp = set(past_db_data["tp"])
     fp = set(past_db_data["fp"])
     tn = set(past_db_data["tn"])
     fn = set(past_db_data["fn"])
-    
-    
+
+
     phish_domain = tp | fn
+    phish_domain |= get_warmup_domains()
     
     benign_needed = len(phish_domain)*BAGGING_MODEL_NUM
     benign_domain = get_fixed_benign_domains()
     benign_domain = random.sample(benign_domain, min(len(benign_domain), benign_needed))
     print(f'phish size:{len(phish_domain)},benign size:{len(benign_domain)}')
-    return transform_domain(phish_domain),transform_domain(benign_domain)
+    return transform_domains_unique(phish_domain),transform_domains_unique(benign_domain)
     
     
 def get_fixed_benign_domains():
-    fixed_benign_domains_list = []
-    
-    with open('../datasets/phishpedia/domain_map.pkl', 'rb') as f:
-        domain_map = pickle.load(f)
-        
-    for k,v in domain_map.items():
-        fixed_benign_domains_list.extend(list(v))
-        
-    df = pd.read_csv('../datasets/raw/tranco_1m_subdomains.csv', header=None, names=['id', 'domain'])
-    tranco_list = df["domain"].tolist()
-    
-    fixed_benign_domains_list.extend(tranco_list)
-    fixed_benign_domains_list = transform_domain(fixed_benign_domains_list)
+    """负样本全部来自 Tranco top-1m"""
+    df = pd.read_csv(TRANCO_DIR, header=None, names=['id', 'domain'])
+    fixed_benign_domains_list = df["domain"].tolist()
+    fixed_benign_domains_list = transform_domains_unique(fixed_benign_domains_list)
     return fixed_benign_domains_list
     
     

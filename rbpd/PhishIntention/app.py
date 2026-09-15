@@ -26,7 +26,7 @@ import redis
 from dotenv import load_dotenv
 import torch
 load_dotenv()
-BLACKLIST_URL = f"http://127.0.0.1:{os.getenv('SERVICE_PORT')}/blacklist"
+
 
 key = b'ThisIsA16ByteKey'
 
@@ -81,15 +81,9 @@ app = Flask(__name__)
 CORS(app)
 
 
-username = "yourusername"
-password = "yourpassword"
-MONGO_URI = f'mongodb://{username}:{password}@localhost:27019/'
-DB_NAME = 'certstream'
-
-EXP_NAMES = ["ablation_charcnn_phishintention_vlm"
-             ]
-
-
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../pipeline"))
+from common import MONGO_URI, MONGO_DB_NAME
 
 
 with app.app_context():
@@ -98,11 +92,8 @@ with app.app_context():
     try:
         mongo_client = MongoClient(MONGO_URI)
         mongo_client.admin.command('ping')
-        db = mongo_client[DB_NAME]
-        results_collection_dict = {}
-        for exp_name in EXP_NAMES:
-            results_collection_dict[exp_name] = db[exp_name]
-            
+        db = mongo_client[MONGO_DB_NAME]
+    
       
     except ConnectionFailure as e:
         
@@ -111,15 +102,13 @@ with app.app_context():
         mongo_client = None
         
 
-    phishintel_redis = redis.Redis(host='localhost', port=6381, db=2)
 
 def save_result_to_mongodb(result_data,exp_name):
 
     if mongo_client is None:
-        
         return False
     try:
-        result = results_collection_dict[exp_name].insert_one(result_data)
+        result = db[exp_name].insert_one(result_data)
         return result.acknowledged
     except OperationFailure as e:
 
@@ -146,7 +135,7 @@ def analyze():
         is_typo = data.get("is_typo")
         domain_classifier_result = data.get("domain_classifier")
         domain_classifier_prob = data.get("domain_classifier_prob")
-        is_ood = data.get("is_ood")
+        sample_type = data.get("sample_type", "risk")
         
         if "phishintention_vlm" in exp_name:
             phish_category,pred_target, matched_domain,siamese_conf,sim_file_name,orivis,plotvis= phishpedia_cls.test_orig_phishintention_vlm(url,screenshot_path)
@@ -165,7 +154,7 @@ def analyze():
             "is_typo":is_typo,
             "domain_classifier":domain_classifier_result,
             "domain_classifier_prob":domain_classifier_prob,
-            "is_ood":is_ood,
+            "sample_type":sample_type,
         }
 
         if phish_category==2:
@@ -178,8 +167,6 @@ def analyze():
             cv2.imwrite(save_path, plotvis)
             cv2.imwrite(save_path.replace('.png', '_original.png'), orivis)
             
-            if exp_name=="baseline_phishintel":
-                phishintel_redis.set(f"domain:{ori_domain}", datetime.now().isoformat())
       
             ip,lat,lon,country,org = get_ip_and_geolocation(url)
             result["ip"] = ip
@@ -216,5 +203,5 @@ def analyze():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001, debug=False)    
-    #  gunicorn -w 8 --worker-class=gthread --threads 8 -t 120 -b 0.0.0.0:5001 app:app
     # export PYTHON_MULTIPROCESSING_START_METHOD=spawn
+    # gunicorn -w 2 --worker-class=gthread --threads 2 -t 120 -b 0.0.0.0:5001 app:app

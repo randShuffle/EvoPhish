@@ -16,7 +16,7 @@ from datetime import datetime, timezone, timedelta
 logging.getLogger("uvicorn.access").disabled = True
 import uvicorn
 import argparse
-from common import EXP_NAMES, SCREENSHOT_BASIC_PORT
+from common import EXP_NAMES, screenshot_port
 import uuid
 from Crypto.Cipher import AES
 import base64
@@ -52,8 +52,7 @@ class ScreenshotRequest(BaseModel):
     exp_name: str
     model_version: int
     timestamp: str
-    ood_score: float
-    is_ood: int
+    sample_type: str = "risk"
 
 
 @asynccontextmanager
@@ -196,8 +195,7 @@ async def screenshot(req: ScreenshotRequest, request: Request):
             exp_name=req.exp_name,
             model_version=req.model_version,
             timestamp=req.timestamp,
-            ood_score=req.ood_score,
-            is_ood=req.is_ood
+            sample_type=req.sample_type
         ))
         return JSONResponse(
             status_code=status.HTTP_200_OK,
@@ -216,7 +214,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    port = SCREENSHOT_BASIC_PORT + EXP_NAMES.index(args.exp_name)
+    port = screenshot_port(args.exp_name)
 
     print(f"Assigned port for experiment '{args.exp_name}': {port}")
 
