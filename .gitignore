@@ -5,3 +5,5 @@ data_mongo/
 *.npy
 phish_pictures/
 /tmp
+/assets
+/cases
