@@ -243,12 +243,24 @@ def get_from_all_data(query,exp_name):
 
 
 def get_warmup_domains():
-    """warmup 种子域名（已知钓鱼），每次重训练都并入 phish 侧"""
+    """Warmup seed domains (known phishing), merged into the phish side on every retrain"""
     with open(WARMUP_DIR, 'rb') as f:
         return set(pickle.load(f))
 
 
-def get_training_data(exp_name,start_time=None):
+def get_benign_from_redis(benign_needed):
+    """Negative samples: randomly sampled from the certstream dedup cache (Redis db0)"""
+    redis_cache = redis.Redis(host='localhost', port=REDIS_DEDUP_PORT, db=0)
+    result = set()
+
+    while len(result) < benign_needed:
+        k = redis_cache.randomkey()
+        if k:
+            result.add(k)
+    return [r.decode('utf-8').replace("domain:", "") for r in result]
+
+
+def get_training_data(exp_name, start_time=None, neg_sampling="redis"):
 
     past_db_data = get_data_from_db(exp_name)
     tp = set(past_db_data["tp"])
@@ -261,14 +273,19 @@ def get_training_data(exp_name,start_time=None):
     phish_domain |= get_warmup_domains()
     
     benign_needed = len(phish_domain)*BAGGING_MODEL_NUM
-    benign_domain = get_fixed_benign_domains()
-    benign_domain = random.sample(benign_domain, min(len(benign_domain), benign_needed))
-    print(f'phish size:{len(phish_domain)},benign size:{len(benign_domain)}')
+
+    if neg_sampling == "redis":
+        benign_domain = get_benign_from_redis(benign_needed)
+    else:
+        benign_domain = get_fixed_benign_domains()
+        benign_domain = random.sample(benign_domain, min(len(benign_domain), benign_needed))
+
+    print(f'neg sampling:{neg_sampling},phish size:{len(phish_domain)},benign size:{len(benign_domain)}')
     return transform_domains_unique(phish_domain),transform_domains_unique(benign_domain)
     
     
 def get_fixed_benign_domains():
-    """负样本全部来自 Tranco top-1m"""
+    """Negative samples all come from the Tranco top-1m list"""
     df = pd.read_csv(TRANCO_DIR, header=None, names=['id', 'domain'])
     fixed_benign_domains_list = df["domain"].tolist()
     fixed_benign_domains_list = transform_domains_unique(fixed_benign_domains_list)
@@ -539,6 +556,8 @@ if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp_name', required=True, choices=EXP_NAMES)
+    parser.add_argument('--neg_sampling', default='redis', choices=['redis', 'tranco'],
+                        help='negative sampling source: redis = certstream dedup cache, tranco = Tranco top-1m list')
     args = parser.parse_args()
     
     precision,recall,model_version,is_retrain,collection_retrain = check_retrain(args.exp_name)
@@ -548,7 +567,7 @@ if __name__ == '__main__':
         os.makedirs(f"../models/ablation/{args.exp_name}/models", exist_ok=True)
         os.makedirs(f"../models/ablation/{args.exp_name}/data", exist_ok=True)
         
-        phish_domain,benign_domain = get_training_data(args.exp_name)
+        phish_domain,benign_domain = get_training_data(args.exp_name, neg_sampling=args.neg_sampling)
         
         if "fasttext" in args.exp_name:
             phish_num,benign_num = train_fasttext_bagging_model(args.exp_name,phish_domain,benign_domain)

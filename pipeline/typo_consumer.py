@@ -8,7 +8,7 @@ import time
 from pymongo import MongoClient
 import msgpack
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "4"
 
 BATCH_SIZE = 5000
 MEMORY_CACHE_TTL = 60*5    

@@ -1,8 +1,8 @@
-"""查看分析结果：从 MongoDB 按条件捞出判定为钓鱼的记录并统计。
+"""View analysis results: pull records judged as phishing from MongoDB by filter conditions and summarize.
 
-用法：
+Usage:
     python view_results.py --exp_name baseline_phishintention
-    python view_results.py --exp_name baseline_phishintention --start 2026-08-06 --end 2026-09-07 --min-conf 0.85
+    python view_results.py --exp_name baseline_phishintention --start 2026-08-06 --end 2026-09-07
 """
 
 import argparse
@@ -17,11 +17,9 @@ from common import EXP_NAMES, MONGO_URI, MONGO_DB_NAME
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--exp_name', required=True, choices=EXP_NAMES, help='集合名称（实验名）')
-    parser.add_argument('--start', default='2026-08-06', help='开始日期 YYYY-MM-DD（含）')
-    parser.add_argument('--end', default='2026-09-07', help='结束日期 YYYY-MM-DD（不含）')
-    parser.add_argument('--min-conf', type=float, default=0.85, help='siamese_conf 下限')
-    parser.add_argument('--exclude-brand', nargs='*', default=[""], help='要排除的 pred_target')
+    parser.add_argument('--exp_name', default=EXP_NAMES[0], choices=EXP_NAMES, help='Collection name (experiment name)')
+    parser.add_argument('--start', default='2026-09-15', help='Start date YYYY-MM-DD (inclusive)')
+    parser.add_argument('--end', default='2026-09-30', help='End date YYYY-MM-DD (exclusive)')
     return parser.parse_args()
 
 
@@ -31,15 +29,13 @@ def main():
     start = datetime.fromisoformat(args.start)
     end = datetime.fromisoformat(args.end)
 
-    # 建立连接
+    # Connect to MongoDB
     client = MongoClient(MONGO_URI)
     db = client[MONGO_DB_NAME]
     collection = db[args.exp_name]
 
     query = {
-        "pred_target": {"$nin": args.exclude_brand},
         "phish_category": {"$in": [2]},
-        "siamese_conf": {"$gte": args.min_conf},
         "$or": [
             {
                 "timestamp": {
@@ -53,12 +49,12 @@ def main():
     date2brand2num = {}
     results = collection.find(query)
 
-    # phish_category 含义：
-    # 0：no logos detected
-    # 1：match but benign(logo domain consistent)
-    # 2：match and phish(logo domain inconsistent)
-    # 3：logos detected but no match
-    # 4：non-CRP / dynamic analysis cannot find CRP
+    # phish_category meanings:
+    # 0: no logos detected
+    # 1: match but benign (logo domain consistent)
+    # 2: match and phish (logo domain inconsistent)
+    # 3: logos detected but no match
+    # 4: non-CRP / dynamic analysis cannot find CRP
     domain_counter = defaultdict(Counter)
 
     l = []
@@ -75,9 +71,7 @@ def main():
         }
 
         pred_target = formatted["pred_target"]
-        if pred_target == "百度" and formatted["ori_domain"].endswith(".cfd"):
-            continue
-
+       
         date = doc["timestamp"].strftime("%m-%d")
 
         if date not in date2brand2num:
@@ -90,20 +84,19 @@ def main():
         l.append(formatted["ori_domain"])
         url = formatted["url"]
         ext = tldextract.extract(url)
-        root_domain = f"{ext.domain}.{ext.suffix}"  # 如 'apple.com'
+        root_domain = f"{ext.domain}.{ext.suffix}"  # e.g. 'apple.com'
         domain_counter[pred_target][root_domain] += 1
         dif_brand_set.add(pred_target)
-
         print(formatted)
 
-    print(f"\n===== 汇总：{args.exp_name} =====")
-    print(f"总条数: {len(l)}，涉及品牌数: {len(dif_brand_set)}")
-    print("\n按日期 x 品牌统计:")
+    print(f"\n===== Summary: {args.exp_name} =====")
+    print(f"Total records: {len(l)}, brands involved: {len(dif_brand_set)}")
+    print("\nCounts by date x brand:")
     for date in sorted(date2brand2num):
         print(f"  {date}: {dict(sorted(date2brand2num[date].items(), key=lambda x: -x[1]))}")
-    print("\n各品牌 top 域名:")
+    print("\nTop domains per brand:")
     for brand, counter in sorted(domain_counter.items(), key=lambda x: -sum(x[1].values())):
-        print(f"  {brand} (共 {sum(counter.values())}): {counter.most_common(5)}")
+        print(f"  {brand} (total {sum(counter.values())}): {counter.most_common(5)}")
 
     client.close()
 

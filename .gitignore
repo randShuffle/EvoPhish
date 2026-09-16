@@ -3,3 +3,5 @@ models/
 data_mongo/
 *__pycache__*
 *.npy
+phish_pictures/
+/tmp

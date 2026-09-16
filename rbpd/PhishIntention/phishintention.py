@@ -21,7 +21,7 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 class PhishIntentionWrapper:
     _caller_prefix = "PhishIntentionWrapper"
-    _DEVICE = 'cuda:1' if torch.cuda.is_available() else 'cpu'
+    _DEVICE = 'cuda:6' if torch.cuda.is_available() else 'cpu'
 
     def __init__(self):
         self._load_config()

@@ -12,7 +12,7 @@ class PriorityQueueWorker:
         self.exp_name = exp_name
         self.redis = redis.Redis(host=redis_host, port=redis_port, db=0)
         self.screenshot_url = f"http://localhost:{screenshot_port(self.exp_name)}/screenshot"
-        # 风险优先比例，由实验名 _r<n> 后缀解析
+        # Risk-priority ratio, parsed from the _r<n> suffix of the experiment name
         self.risk_ratio = parse_risk_ratio(exp_name)
         self.use_rand = self.risk_ratio < 1.0
 
@@ -73,7 +73,7 @@ class PriorityQueueWorker:
         while True:
             try:
 
-                # 风险/随机混合采样：按 x:(1-x) 概率在 risk/rand 队列间选择
+                # Risk/random mixed sampling: pick between the risk/rand queues with probability x:(1-x)
                 if self.use_rand:
                     queue_type = "risk" if random.random() < self.risk_ratio else "rand"
                 else:

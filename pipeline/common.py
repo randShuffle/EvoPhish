@@ -1,17 +1,17 @@
-"""基础设施配置常量：流水线的唯一来源。"""
+"""Infrastructure configuration constants: single source of truth for the pipeline."""
 
 import re
 
 # ---------- Redis ----------
-# 优先级队列（risk:/rand: ZSET + domain_metadata HASH）
+# Priority queues (risk:/rand: ZSET + domain_metadata HASH)
 REDIS_PORT = 6380
-# 去重 / 缓存 Redis，按 db 划分语义：
-#   db0: certstream 域名全局去重（typo_consumer 写入，model_update 采样负样本）
-#   db2: phishintel 历史黑名单（init_local_blacklist 写入，phishintel_model_consumer 查询）
+# Dedup / cache Redis, semantics split by db:
+#   db0: global certstream domain dedup (written by typo_consumer, negative sampling in model_update)
+#   db2: phishintel historical blacklist (written by init_local_blacklist, queried by phishintel_model_consumer)
 REDIS_DEDUP_PORT = 6381
 
-# ---------- 截图服务 ----------
-# 截图服务的基准端口（各实验端口见下方 ALL_EXPERIMENTS 注册表）
+# ---------- Screenshot service ----------
+# Base port of the screenshot service (per-experiment ports are in the ALL_EXPERIMENTS registry below)
 SCREENSHOT_BASIC_PORT = 6000
 
 # ---------- Kafka ----------
@@ -22,13 +22,13 @@ KAFKA_BROKER = f"localhost:{KAFKA_PORT}"
 WS_URL = "ws://localhost:8080/full-stream"
 
 # ---------- MongoDB ----------
-MONGO_USERNAME = "admin"
-MONGO_PASSWORD = "Woshiszc666"
+MONGO_USERNAME = "yourusername"
+MONGO_PASSWORD = "yourpassword"
 MONGO_PORT = 27021
 MONGO_URI = f"mongodb://{MONGO_USERNAME}:{MONGO_PASSWORD}@localhost:{MONGO_PORT}/"
 MONGO_DB_NAME = "certstream_demo"
 
-# ---------- 模型 / 数据路径 ----------
+# ---------- Model / data paths ----------
 TYPO_MODEL_DIR = "../models/typo_model_10m_canine_no_subdomains"
 DOMAIN_MAP_DIR = "../datasets/domain_map/domain_map.pkl"
 WARMUP_DIR = "../datasets/warmup/warmup.pkl"
@@ -37,9 +37,11 @@ TRANCO_DIR = "../datasets/tranco/tranco_1m_subdomains.csv"
 BAGGING_MODEL_NUM = 50
 
 
-# ---------- 域名工具：托管平台后缀剥离 ----------
-# 原 model_consumer.py 与 model_update.py 各有一份 HOSTING_PLATFORMS + transform_domain，
-# 语义略有差别（model_consumer 保序保对齐、model_update 去重），这里同时提供两个版本。
+# ---------- Domain utils: strip hosting-platform suffixes ----------
+# model_consumer.py and model_update.py each used to carry their own
+# HOSTING_PLATFORMS + transform_domain, with slightly different semantics
+# (model_consumer preserves order and alignment, model_update dedups).
+# Both variants are provided here.
 
 HOSTING_PLATFORMS = {
     "4everland.app",
@@ -95,7 +97,7 @@ HOSTING_PLATFORMS = {
 
 
 def _strip_hosting_platform(domain):
-    """单个域名剥离托管平台后缀，如 xxx.github.io -> xxx"""
+    """Strip the hosting-platform suffix from a single domain, e.g. xxx.github.io -> xxx"""
     for platform in HOSTING_PLATFORMS:
         if domain.endswith("." + platform):
             domain = domain[: -(len(platform) + 1)]
@@ -106,47 +108,48 @@ def _strip_hosting_platform(domain):
 
 
 def transform_domains(domains):
-    """保序版本（原 model_consumer.py）：输出与输入一一对齐，不去重。"""
+    """Order-preserving variant (former model_consumer.py): output aligns one-to-one with input, no dedup."""
     return [_strip_hosting_platform(d) for d in domains]
 
 
 def transform_domains_unique(domains):
-    """去重版本（原 model_update.py）：返回 list，顺序不保证。"""
+    """Dedup variant (former model_update.py): returns a list, order not guaranteed."""
     return list({_strip_hosting_platform(d) for d in domains})
 
 
-# ---------- 实验名注册表：所有实验的唯一来源 ----------
-# 历史上截图端口按 SCREENSHOT_BASIC_PORT + EXP_NAMES.index(exp_name) 计算，
-# 增删实验会导致端口漂移。这里改为每个实验显式固定端口，与当前线上取值保持一致。
+# ---------- Experiment registry: single source of truth for all experiments ----------
+# Historically the screenshot port was computed as SCREENSHOT_BASIC_PORT + EXP_NAMES.index(exp_name),
+# so adding/removing experiments caused port drift. Now each experiment gets an explicit
+# fixed port, matching the values currently used in production.
 #
-# 端口分配说明：
-#   6000-6004 当前启用实验
-#   6010 起分配给当前未启用的 ablation/baseline 实验（仅需不与启用实验冲突）
-#   8000 保持与 phishintel 旧 SCREENSHOT_BASIC_PORT=8000 一致
+# Port allocation:
+#   6000-6004 currently enabled experiments
+#   6010+    ablation/baseline experiments not currently enabled (only need to avoid conflicts)
+#   8000     kept consistent with phishintel's legacy SCREENSHOT_BASIC_PORT=8000
 ALL_EXPERIMENTS = {
-    "ablation_charcnn_phishintention_vlm_r90": {"screenshot_port": 6002},  # 默认 r90
+    "ablation_charcnn_phishintention_vlm_r90": {"screenshot_port": 6002},  # default r90
 }
 
-# 当前启用的实验（argparse choices 用这个；开关实验只改这里）
+# Currently enabled experiments (used as argparse choices; toggle experiments by editing only this list)
 EXP_NAMES = [
     "ablation_charcnn_phishintention_vlm_r90",
 ]
 
 
 def screenshot_port(exp_name):
-    """按注册表返回实验对应的截图服务端口。"""
+    """Return the screenshot service port for an experiment from the registry."""
     return ALL_EXPERIMENTS[exp_name]["screenshot_port"]
 
 
 def parse_risk_ratio(exp_name, default=1.0):
-    """从实验名后缀 _r<n> 解析风险优先比例，无后缀返回 default。
+    """Parse the risk-priority ratio from the _r<n> suffix of the experiment name; return default if absent.
 
-    后缀为百分数整数，如 _r90 -> 0.9。
+    The suffix is an integer percentage, e.g. _r90 -> 0.9.
     """
     m = re.search(r"_r(\d+)$", exp_name)
     return int(m.group(1)) / 100.0 if m else default
 
 
 def base_exp_name(exp_name):
-    """剥离比例后缀，用于定位模型目录等共享资源"""
+    """Strip the ratio suffix; used to locate shared resources such as model directories"""
     return re.sub(r"_r\d+$", "", exp_name)

@@ -6,7 +6,6 @@ from fastapi import FastAPI, Request, HTTPException
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
 from playwright.async_api import async_playwright
-from playwright_stealth import stealth_async
 import asyncio
 from fastapi.responses import JSONResponse
 from fastapi import status
@@ -33,7 +32,6 @@ def encrypt_filename(name):
     return base64.urlsafe_b64encode(encrypted).decode()
 
 
-PROXY_SERVER = "http://127.0.0.1:7890"
 
 PHISHPEDIA_API_URL = 'http://localhost:5000/analyze'
 PHISHINTENTION_API_URL = 'http://localhost:5001/analyze'
@@ -126,7 +124,7 @@ async def process_screenshot(browser, **extra_payload):
                 context = await browser.new_context()
                 page = await context.new_page()
          
-                await stealth_async(page)
+         
 
                 await page.goto(url, timeout=10000)
                 await asyncio.sleep(3)

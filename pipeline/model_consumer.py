@@ -20,7 +20,7 @@ import msgpack
 import os
 import torch
 import requests
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "4"
 
 
 class CertstreamConsumer:
@@ -35,8 +35,8 @@ class CertstreamConsumer:
         self.consumer = self._create_consumer()
         self.redis_client = redis.Redis(host='localhost', port=REDIS_PORT, db=0)
         self.risk_queue_key = f'risk:{self.exp_name}'
-        self.rand_queue_key = f'rand:{self.exp_name}'  # 随机采样臂队列
-        self.risk_ratio = parse_risk_ratio(exp_name)  # 风险优先比例，由实验名 _r<n> 后缀解析，默认 1.0
+        self.rand_queue_key = f'rand:{self.exp_name}'  # random-sampling arm queue
+        self.risk_ratio = parse_risk_ratio(exp_name)  # risk-priority ratio, parsed from the _r<n> suffix of the experiment name, default 1.0
         with open("./redis.lua", "r", encoding="utf-8") as f:
             self.lua_script = f.read()
         sha = self.redis_client.script_load(self.lua_script)
@@ -93,7 +93,7 @@ class CertstreamConsumer:
         else:
             priority_score = probability+10*is_typo
 
-        # 风险臂：按风险分高低保留
+        # Risk arm: keep entries by descending risk score
         pipe.evalsha(self.lua_sha, 2, self.risk_queue_key, metadata_key,
                     domain, str(priority_score),
                     json.dumps({
@@ -102,7 +102,7 @@ class CertstreamConsumer:
                         "sample_type": "risk",
                     }), str(self.queue_max_size))
 
-        # 随机臂：随机分数 + 定容淘汰 = 对数据流的均匀随机采样
+        # Random arm: random score + fixed-capacity eviction = uniform random sampling over the data stream
         pipe.evalsha(self.lua_sha, 2, self.rand_queue_key, f'domain_metadata:{self.exp_name}:rand',
                     domain, str(random.uniform(0, 1)),
                     json.dumps({
@@ -134,7 +134,7 @@ class CertstreamConsumer:
             if len(self.batch) >= self.batch_size:
 
                 start = datetime.now()
-                if self.exp_name not in ["baseline_phishpedia","baseline_phishintention","baseline_phishvlm"]:
+                if self.exp_name not in ["baseline_phishpedia","baseline_phishintention"]:
                     transform_domains_result = transform_domains(self.batch)
                     probability_list = self.classifier.inference(transform_domains_result)
                     embedding_tensors = torch.tensor(self.embedding_list).to("cuda:0")
