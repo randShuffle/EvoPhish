@@ -123,7 +123,7 @@ tmux_window vlm_rerank "conda activate video && cd '$ROOT/rbpd/vlm' && until cur
 tmux_window phishintention "conda activate phishintention && cd '$ROOT/rbpd/PhishIntention' && gunicorn -w 2 --worker-class=gthread --threads 2 -t 120 -b 0.0.0.0:5001 app:app"
 tmux_window certstream "conda activate Reptile && cd '$ROOT/pipeline' && python certstream_producer.py"
 tmux_window typo "conda activate Reptile && cd '$ROOT/pipeline' && python typo_consumer.py"
-tmux_window model_consumer "conda activate Reptile && cd '$ROOT/pipeline' && python model_consumer.py --exp_name $EXP_NAME"
+tmux_window model_consumer "conda activate Reptile && cd '$ROOT/pipeline' && chmod u+x ./ablation_charcnn_phishintention_vlm_r90.sh && ./ablation_charcnn_phishintention_vlm_r90.sh"
 tmux_window redis_consumer "conda activate Reptile && cd '$ROOT/pipeline' && python redis_consumer.py --exp_name $EXP_NAME"
 tmux_window screenshot "conda activate Reptile && cd '$ROOT/pipeline' && python screenshot.py --exp_name $EXP_NAME"
 
